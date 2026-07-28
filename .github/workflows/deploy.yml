@@ -1,0 +1,59 @@
+name: Deploy Next.js Project
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📬 Notifikasi Deploy Dimulai
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            🚀 *Deploy Dimulai*
+            📦 Repo: `${{ github.repository }}`
+            💬 Commit: ${{ github.event.head_commit.message }}
+
+      - name: 🔧 Deploy ke VPS
+        id: deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            set -e
+            cd ~/projects/${{ secrets.PROJECT_FOLDER }}
+            git pull origin main
+            docker compose up -d --build
+            docker system prune -f
+
+      - name: ✅ Notifikasi Sukses
+        if: success()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ✅ *Deploy BERHASIL*
+            📦 `${{ github.repository }}`
+            💬 ${{ github.event.head_commit.message }}
+            🔗 [Lihat Actions](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+      - name: ❌ Notifikasi Gagal
+        if: failure()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: |
+            ❌ *Deploy GAGAL*
+            📦 `${{ github.repository }}`
+            💬 ${{ github.event.head_commit.message }}
+            🔗 [Lihat Log](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})

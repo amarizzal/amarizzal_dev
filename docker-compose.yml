@@ -1,0 +1,14 @@
+services:
+  nextjs:
+    build: .
+    restart: unless-stopped
+    expose:
+      - "3000"
+    env_file:
+      - .env.production
+    networks:
+      - npm_network
+
+networks:
+  npm_network:
+    external: true
