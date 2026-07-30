@@ -1,6 +1,6 @@
 services:
   nextjs:
-    build: .
+    image: ghcr.io/amarizzal/amarizzal_dev:latest
     restart: unless-stopped
     expose:
       - "3000"
