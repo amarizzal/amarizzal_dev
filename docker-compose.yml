@@ -1,5 +1,12 @@
 services:
-  nextjs:
+  # Nama service SENGAJA "amarizzal-nextjs", bukan "nextjs" -- droplet ini
+  # dipakai bersama beberapa project di satu network npm_network. Docker
+  # Compose otomatis daftarkan nama service sebagai alias DNS di network
+  # itu; nama generik "nextjs" pernah dipakai project lain (ssb-poultry,
+  # akasha) dan collide -- siapa pun yang connect terakhir "mencuri" alias
+  # itu, bikin proxy host project lain ikut ke-route kesini tanpa error.
+  # Selalu pakai nama unik per project di VPS bersama ini.
+  amarizzal-nextjs:
     image: ghcr.io/amarizzal/amarizzal_dev:latest
     restart: unless-stopped
     expose:
