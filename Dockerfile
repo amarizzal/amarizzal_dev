@@ -30,6 +30,16 @@ ENV NODE_ENV=production
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
+# BARU — migrasi & seed dijalankan di dalam container ini saat deploy.
+# `pg` dan `bcryptjs` sudah ikut ter-trace ke .next/standalone/node_modules
+# (dipakai src/lib/db.ts & src/lib/auth.ts), jadi scripts/*.mjs bisa
+# me-resolve keduanya dari /app/node_modules tanpa npm install tambahan.
+COPY --from=builder /app/db ./db
+COPY --from=builder /app/scripts ./scripts
+# Titik mount volume uploads_data (lihat docker-compose.yml). Isi apa pun di
+# sini akan tertutup mount begitu volume terpasang — hanya jaga-jaga direktori
+# ada sebelum volume pertama kali dipasang.
+RUN mkdir -p /app/public/uploads
 
 EXPOSE 3000
 CMD ["node", "server.js"]

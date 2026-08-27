@@ -82,7 +82,12 @@ jobs:
             cd ~/projects/${{ secrets.PROJECT_FOLDER }}
             git pull origin main
             docker compose pull
-            docker compose up -d
+            # Migrasi dijalankan dengan IMAGE BARU tapi SEBELUM container lama
+            # diganti. Kalau migrasi gagal, `set -e` menghentikan deploy dan
+            # container lama tetap melayani trafik — bukan container baru yang
+            # bengong menunggu skema yang tidak pernah ada.
+            docker compose run --rm --no-deps amarizzal-nextjs node scripts/migrate.mjs
+            docker compose up -d --remove-orphans
             docker image prune -f
 
       - name: ✅ Notifikasi Sukses

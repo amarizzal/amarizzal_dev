@@ -3,9 +3,9 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { Briefcase, CheckCircle2 } from "lucide-react";
-import { experiences } from "@/lib/data";
+import type { Experience as ExperienceItem } from "@/lib/types";
 
-export default function Experience() {
+export default function Experience({ experiences }: { experiences: ExperienceItem[] }) {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-10%" });
 
@@ -45,7 +45,7 @@ export default function Experience() {
           <div className="space-y-10 pl-12">
             {experiences.map((exp, i) => (
               <motion.div
-                key={exp.role}
+                key={exp.id}
                 initial={{ opacity: 0, x: -30 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ duration: 0.6, delay: 0.2 + i * 0.15 }}

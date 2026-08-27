@@ -1,62 +1,65 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useEffect } from "react";
+import { useActionState } from "react";
 import { motion, useInView } from "framer-motion";
 import { Mail, MapPin, MessageSquare, Send, Phone } from "lucide-react";
 import { GithubIcon, LinkedinIcon } from "@/components/ui/SocialIcons";
-import { personalInfo } from "@/lib/data";
+import { kirimPesan, type KirimPesanState } from "@/app/actions";
+import type { Profile } from "@/lib/types";
 
-const contactLinks = [
-  {
-    icon: Mail,
-    label: "Email",
-    value: personalInfo.email,
-    href: `mailto:${personalInfo.email}`,
-    color: "#6366f1",
-  },
-  {
-    icon: Phone,
-    label: "WhatsApp",
-    value: "+62 812-3456-7890",
-    href: personalInfo.whatsapp,
-    color: "#22c55e",
-  },
-  {
-    icon: GithubIcon,
-    label: "GitHub",
-    value: "github.com/rizalammar",
-    href: personalInfo.github,
-    color: "#e2e8f0",
-  },
-  {
-    icon: LinkedinIcon,
-    label: "LinkedIn",
-    value: "linkedin.com/in/rizalammar",
-    href: personalInfo.linkedin,
-    color: "#0ea5e9",
-  },
-];
-
-export default function Contact() {
+export default function Contact({ profile }: { profile: Profile | null }) {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-10%" });
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [state, formAction, pending] = useActionState<KirimPesanState, FormData>(
+    kirimPesan,
+    {},
+  );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
+  useEffect(() => {
+    if (state.ok) formRef.current?.reset();
+  }, [state.ok]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus("sending");
-    // Simulate send
-    await new Promise((r) => setTimeout(r, 1200));
-    setStatus("sent");
-    setForm({ name: "", email: "", subject: "", message: "" });
-    setTimeout(() => setStatus("idle"), 4000);
-  };
+  const contactLinks = [
+    profile?.email
+      ? {
+          icon: Mail,
+          label: "Email",
+          value: profile.email,
+          href: `mailto:${profile.email}`,
+          color: "#6366f1",
+        }
+      : null,
+    profile?.whatsapp_url
+      ? {
+          icon: Phone,
+          label: "WhatsApp",
+          value: "Chat sekarang",
+          href: profile.whatsapp_url,
+          color: "#22c55e",
+        }
+      : null,
+    profile?.github_url
+      ? {
+          icon: GithubIcon,
+          label: "GitHub",
+          value: profile.github_url.replace(/^https?:\/\//, ""),
+          href: profile.github_url,
+          color: "#e2e8f0",
+        }
+      : null,
+    profile?.linkedin_url
+      ? {
+          icon: LinkedinIcon,
+          label: "LinkedIn",
+          value: profile.linkedin_url.replace(/^https?:\/\//, ""),
+          href: profile.linkedin_url,
+          color: "#0ea5e9",
+        }
+      : null,
+  ].filter((l): l is NonNullable<typeof l> => l !== null);
 
   return (
     <section id="contact" ref={ref} className="py-24 relative overflow-hidden">
@@ -95,7 +98,7 @@ export default function Contact() {
                 <MapPin size={16} className="text-[#6366f1]" />
                 <span className="text-white font-semibold text-sm">Lokasi</span>
               </div>
-              <p className="text-gray-400 text-sm">Malang, Jawa Timur, Indonesia</p>
+              <p className="text-gray-400 text-sm">{profile?.location ?? "Malang, Jawa Timur, Indonesia"}</p>
               <p className="text-gray-600 text-xs mt-1">Tersedia untuk remote & onsite</p>
             </motion.div>
 
@@ -152,7 +155,8 @@ export default function Contact() {
             className="lg:col-span-3"
           >
             <form
-              onSubmit={handleSubmit}
+              ref={formRef}
+              action={formAction}
               className="glass rounded-2xl p-6 sm:p-8 border border-[var(--border)] space-y-5"
             >
               <div className="flex items-center gap-2 mb-2">
@@ -160,14 +164,22 @@ export default function Contact() {
                 <h3 className="text-white font-semibold">Kirim Pesan</h3>
               </div>
 
+              {/* Honeypot — kolom tersembunyi, hanya bot yang mengisinya */}
+              <input
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                className="hidden"
+                aria-hidden="true"
+              />
+
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs text-gray-500 font-medium">Nama *</label>
                   <input
                     type="text"
                     name="name"
-                    value={form.name}
-                    onChange={handleChange}
                     required
                     placeholder="Budi Santoso"
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-[var(--border)] text-white text-sm placeholder-gray-600 focus:outline-none focus:border-[#6366f1]/50 transition-colors"
@@ -178,8 +190,6 @@ export default function Contact() {
                   <input
                     type="email"
                     name="email"
-                    value={form.email}
-                    onChange={handleChange}
                     required
                     placeholder="budi@gmail.com"
                     className="w-full px-4 py-3 rounded-xl bg-white/5 border border-[var(--border)] text-white text-sm placeholder-gray-600 focus:outline-none focus:border-[#6366f1]/50 transition-colors"
@@ -188,13 +198,10 @@ export default function Contact() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs text-gray-500 font-medium">Subjek *</label>
+                <label className="text-xs text-gray-500 font-medium">Subjek</label>
                 <input
                   type="text"
                   name="subject"
-                  value={form.subject}
-                  onChange={handleChange}
-                  required
                   placeholder="Misal: Butuh website company profile"
                   className="w-full px-4 py-3 rounded-xl bg-white/5 border border-[var(--border)] text-white text-sm placeholder-gray-600 focus:outline-none focus:border-[#6366f1]/50 transition-colors"
                 />
@@ -204,8 +211,6 @@ export default function Contact() {
                 <label className="text-xs text-gray-500 font-medium">Pesan *</label>
                 <textarea
                   name="message"
-                  value={form.message}
-                  onChange={handleChange}
                   required
                   rows={5}
                   placeholder="Ceritakan proyek atau kebutuhan Anda..."
@@ -213,20 +218,20 @@ export default function Contact() {
                 />
               </div>
 
+              {state.error && (
+                <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2.5">
+                  {state.error}
+                </p>
+              )}
+
               <motion.button
                 type="submit"
-                disabled={status === "sending" || status === "sent"}
+                disabled={pending}
                 className="w-full btn-primary py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
-                whileHover={status === "idle" ? { scale: 1.02 } : {}}
-                whileTap={status === "idle" ? { scale: 0.98 } : {}}
+                whileHover={!pending ? { scale: 1.02 } : {}}
+                whileTap={!pending ? { scale: 0.98 } : {}}
               >
-                {status === "idle" && (
-                  <>
-                    <Send size={15} />
-                    Kirim Pesan
-                  </>
-                )}
-                {status === "sending" && (
+                {pending ? (
                   <>
                     <motion.span
                       animate={{ rotate: 360 }}
@@ -235,9 +240,14 @@ export default function Contact() {
                     />
                     Mengirim...
                   </>
+                ) : state.ok ? (
+                  "✓ Pesan Terkirim!"
+                ) : (
+                  <>
+                    <Send size={15} />
+                    Kirim Pesan
+                  </>
                 )}
-                {status === "sent" && "✓ Pesan Terkirim!"}
-                {status === "error" && "Gagal. Coba lagi."}
               </motion.button>
 
               <p className="text-xs text-gray-600 text-center">

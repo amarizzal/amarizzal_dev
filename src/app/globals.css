@@ -189,3 +189,101 @@ body {
     font-size: 15px;
   }
 }
+
+/*
+ * Tailwind v4 di project ini CSS-first (tanpa tailwind.config), jadi
+ * @tailwindcss/typography tidak bisa dipasang lewat cara biasa — style
+ * "prose" untuk artikel blog & studi kasus ditulis manual di sini.
+ * Dipakai lewat dangerouslySetInnerHTML pada HTML hasil Tiptap yang sudah
+ * disanitasi (lihat src/lib/html.ts).
+ */
+.prose-artikel {
+  color: #d1d5db;
+  font-size: 1rem;
+  line-height: 1.8;
+}
+.prose-artikel > * + * {
+  margin-top: 1.25em;
+}
+.prose-artikel h2 {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 2em;
+}
+.prose-artikel h3 {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 1.75em;
+}
+.prose-artikel h4 {
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 1.5em;
+}
+.prose-artikel p {
+  color: #9ca3af;
+}
+.prose-artikel a {
+  color: #818cf8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-artikel a:hover {
+  color: #a78bfa;
+}
+.prose-artikel strong {
+  color: #e5e7eb;
+  font-weight: 600;
+}
+.prose-artikel ul,
+.prose-artikel ol {
+  padding-left: 1.4em;
+}
+.prose-artikel ul {
+  list-style: disc;
+}
+.prose-artikel ol {
+  list-style: decimal;
+}
+.prose-artikel li + li {
+  margin-top: 0.4em;
+}
+.prose-artikel blockquote {
+  border-left: 2px solid var(--primary);
+  padding-left: 1em;
+  color: #9ca3af;
+  font-style: italic;
+}
+.prose-artikel code {
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-size: 0.875em;
+  font-family: var(--font-geist-mono), monospace;
+}
+.prose-artikel pre {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1em;
+  overflow-x: auto;
+}
+.prose-artikel pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.prose-artikel img {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  max-width: 100%;
+  height: auto;
+}
+.prose-artikel hr {
+  border: none;
+  border-top: 1px solid var(--border);
+}

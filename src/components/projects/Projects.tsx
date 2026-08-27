@@ -1,18 +1,31 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { motion, useInView, AnimatePresence } from "framer-motion";
-import { ExternalLink, Star, Layers } from "lucide-react";
+import { ExternalLink, Star, Layers, FileText } from "lucide-react";
 import { GithubIcon } from "@/components/ui/SocialIcons";
-import { projects, personalInfo } from "@/lib/data";
+import type { Profile, Project } from "@/lib/types";
 
-const categories = ["Semua", "Full-Stack App", "E-Commerce", "SaaS", "Backend", "Website", "PWA"];
-
-export default function Projects() {
+export default function Projects({
+  projects,
+  profile,
+}: {
+  projects: Project[];
+  profile: Profile | null;
+}) {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-10%" });
   const [filter, setFilter] = useState("Semua");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  // Kategori diturunkan dari project yang sungguh ada, bukan daftar tetap —
+  // daftar lama (E-Commerce, PWA, dst.) sudah tidak relevan sejak project
+  // filler diganti project nyata.
+  const categories = useMemo(
+    () => ["Semua", ...Array.from(new Set(projects.map((p) => p.category)))],
+    [projects],
+  );
 
   const filtered = filter === "Semua" ? projects : projects.filter((p) => p.category === filter);
 
@@ -42,90 +55,96 @@ export default function Projects() {
         </motion.div>
 
         {/* Filter tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="flex flex-wrap gap-2 mb-8"
-        >
-          {categories.map((cat) => (
-            <motion.button
-              key={cat}
-              onClick={() => setFilter(cat)}
-              className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
-                filter === cat
-                  ? "bg-[#6366f1] text-white"
-                  : "glass border border-[var(--border)] text-gray-400 hover:text-white hover:border-[#6366f1]/40"
-              }`}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              {cat}
-            </motion.button>
-          ))}
-        </motion.div>
+        {categories.length > 2 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex flex-wrap gap-2 mb-8"
+          >
+            {categories.map((cat) => (
+              <motion.button
+                key={cat}
+                onClick={() => setFilter(cat)}
+                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                  filter === cat
+                    ? "bg-[#6366f1] text-white"
+                    : "glass border border-[var(--border)] text-gray-400 hover:text-white hover:border-[#6366f1]/40"
+                }`}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                {cat}
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
 
         {/* Project Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           <AnimatePresence mode="popLayout">
             {filtered.map((project, i) => (
               <motion.div
-                key={project.title}
+                key={project.id}
                 layout
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
                 className="card-project rounded-2xl overflow-hidden group cursor-pointer"
-                onMouseEnter={() => setHoveredId(project.title)}
+                onMouseEnter={() => setHoveredId(project.id)}
                 onMouseLeave={() => setHoveredId(null)}
               >
                 {/* Card top bar */}
                 <div
                   className="h-1 w-full"
-                  style={{ background: `linear-gradient(90deg, ${project.color}80, ${project.color})` }}
+                  style={{ background: `linear-gradient(90deg, ${project.accent_color}80, ${project.accent_color})` }}
                 />
 
                 {/* Card visual placeholder */}
-                <div
-                  className="h-40 flex items-center justify-center relative overflow-hidden"
-                  style={{ background: `${project.color}08` }}
-                >
-                  {/* Grid pattern overlay */}
+                <Link href={`/project/${project.slug}`} className="block">
                   <div
-                    className="absolute inset-0 opacity-30"
-                    style={{
-                      backgroundImage: `linear-gradient(${project.color}18 1px, transparent 1px), linear-gradient(90deg, ${project.color}18 1px, transparent 1px)`,
-                      backgroundSize: "24px 24px",
-                    }}
-                  />
-                  <motion.div
-                    className="relative z-10 w-16 h-16 rounded-2xl flex items-center justify-center"
-                    style={{ background: `${project.color}15`, border: `1px solid ${project.color}30` }}
-                    animate={hoveredId === project.title ? { rotate: [0, 5, -5, 0], scale: 1.1 } : {}}
-                    transition={{ duration: 0.5 }}
+                    className="h-40 flex items-center justify-center relative overflow-hidden"
+                    style={{ background: `${project.accent_color}08` }}
                   >
-                    <Layers size={28} style={{ color: project.color }} />
-                  </motion.div>
+                    {/* Grid pattern overlay */}
+                    <div
+                      className="absolute inset-0 opacity-30"
+                      style={{
+                        backgroundImage: `linear-gradient(${project.accent_color}18 1px, transparent 1px), linear-gradient(90deg, ${project.accent_color}18 1px, transparent 1px)`,
+                        backgroundSize: "24px 24px",
+                      }}
+                    />
+                    <motion.div
+                      className="relative z-10 w-16 h-16 rounded-2xl flex items-center justify-center"
+                      style={{ background: `${project.accent_color}15`, border: `1px solid ${project.accent_color}30` }}
+                      animate={hoveredId === project.id ? { rotate: [0, 5, -5, 0], scale: 1.1 } : {}}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <Layers size={28} style={{ color: project.accent_color }} />
+                    </motion.div>
 
-                  {project.featured && (
-                    <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                      style={{ background: `${project.color}20`, color: project.color, border: `1px solid ${project.color}30` }}>
-                      <Star size={10} fill="currentColor" />
-                      Featured
-                    </div>
-                  )}
-                </div>
+                    {project.featured && (
+                      <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                        style={{ background: `${project.accent_color}20`, color: project.accent_color, border: `1px solid ${project.accent_color}30` }}>
+                        <Star size={10} fill="currentColor" />
+                        Featured
+                      </div>
+                    )}
+                  </div>
+                </Link>
 
                 {/* Card content */}
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="text-white font-bold text-base leading-tight group-hover:text-white/90">
-                      {project.title}
-                    </h3>
+                    <Link href={`/project/${project.slug}`}>
+                      <h3 className="text-white font-bold text-base leading-tight group-hover:text-white/90">
+                        {project.title}
+                      </h3>
+                    </Link>
                     <span
                       className="text-xs px-2 py-0.5 rounded-full flex-shrink-0"
-                      style={{ background: `${project.color}15`, color: project.color }}
+                      style={{ background: `${project.accent_color}15`, color: project.accent_color }}
                     >
                       {project.category}
                     </span>
@@ -154,25 +173,40 @@ export default function Projects() {
 
                   {/* Links */}
                   <div className="flex gap-2">
-                    <motion.a
-                      href={project.liveUrl}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white transition-opacity"
-                      style={{ background: project.color }}
-                      whileHover={{ opacity: 0.9, scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      <ExternalLink size={12} />
-                      Live Demo
-                    </motion.a>
-                    <motion.a
-                      href={project.githubUrl}
-                      className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold glass border border-[var(--border)] text-gray-400 hover:text-white"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                    >
-                      <GithubIcon size={12} />
-                      Code
-                    </motion.a>
+                    <motion.div className="flex-1" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                      <Link
+                        href={`/project/${project.slug}`}
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white transition-opacity"
+                        style={{ background: project.accent_color }}
+                      >
+                        <FileText size={12} />
+                        Studi Kasus
+                      </Link>
+                    </motion.div>
+                    {project.live_status === "live" && project.live_url && (
+                      <motion.a
+                        href={project.live_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold glass border border-[var(--border)] text-gray-400 hover:text-white"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                      >
+                        <ExternalLink size={12} />
+                      </motion.a>
+                    )}
+                    {project.github_url && (
+                      <motion.a
+                        href={project.github_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold glass border border-[var(--border)] text-gray-400 hover:text-white"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                      >
+                        <GithubIcon size={12} />
+                      </motion.a>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -181,24 +215,25 @@ export default function Projects() {
         </div>
 
         {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={inView ? { opacity: 1 } : {}}
-          transition={{ delay: 0.6 }}
-          className="text-center mt-10"
-        >
-          <a
-            href={personalInfo?.github ?? "#"}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#6366f1] transition-colors"
+        {profile?.github_url && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={inView ? { opacity: 1 } : {}}
+            transition={{ delay: 0.6 }}
+            className="text-center mt-10"
           >
-            <GithubIcon size={16} />
-            Lihat semua proyek di GitHub →
-          </a>
-        </motion.div>
+            <a
+              href={profile.github_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#6366f1] transition-colors"
+            >
+              <GithubIcon size={16} />
+              Lihat semua proyek di GitHub →
+            </a>
+          </motion.div>
+        )}
       </div>
     </section>
   );
 }
-

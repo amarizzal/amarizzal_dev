@@ -1,21 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Code2 } from "lucide-react";
+import type { Profile } from "@/lib/types";
 
 const navLinks = [
   { label: "Tentang", href: "#about" },
   { label: "Keahlian", href: "#skills" },
   { label: "Proyek", href: "#projects" },
   { label: "Pengalaman", href: "#experience" },
+  { label: "Tulisan", href: "/blog" },
   { label: "Kontak", href: "#contact" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ profile }: { profile: Profile | null }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("");
+
+  const nama = profile?.nama ?? "Rizal Ammar";
+  const [namaDepan, ...sisaNama] = nama.split(" ");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -35,10 +41,12 @@ export default function Navbar() {
       { rootMargin: "-40% 0px -55% 0px" }
     );
 
-    navLinks.forEach(({ href }) => {
-      const el = document.querySelector(href);
-      if (el) observer.observe(el);
-    });
+    navLinks
+      .filter((l) => l.href.startsWith("#"))
+      .forEach(({ href }) => {
+        const el = document.querySelector(href);
+        if (el) observer.observe(el);
+      });
 
     return () => observer.disconnect();
   }, []);
@@ -73,23 +81,33 @@ export default function Navbar() {
                 <Code2 size={16} className="text-white" />
               </div>
               <span className="font-bold text-white text-sm tracking-wide">
-                rizal<span className="gradient-text">ammar</span>
+                {namaDepan.toLowerCase()}
+                <span className="gradient-text">{sisaNama.join(" ").toLowerCase()}</span>
               </span>
             </motion.button>
 
             {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-1">
               {navLinks.map((link) => {
-                const isActive = activeSection === link.href.slice(1);
+                const isAnchor = link.href.startsWith("#");
+                const isActive = isAnchor && activeSection === link.href.slice(1);
+                const className = `relative px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  isActive ? "text-white" : "text-gray-400 hover:text-gray-200"
+                }`;
+
+                if (!isAnchor) {
+                  return (
+                    <Link key={link.href} href={link.href} className={className}>
+                      <span className="relative">{link.label}</span>
+                    </Link>
+                  );
+                }
+
                 return (
                   <button
                     key={link.href}
                     onClick={() => handleNavClick(link.href)}
-                    className={`relative px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      isActive
-                        ? "text-white"
-                        : "text-gray-400 hover:text-gray-200"
-                    }`}
+                    className={className}
                   >
                     {isActive && (
                       <motion.span
@@ -137,22 +155,47 @@ export default function Navbar() {
             className="fixed top-16 left-0 right-0 z-40 glass border-b border-[var(--border)] px-4 py-4"
           >
             <div className="flex flex-col gap-1 max-w-6xl mx-auto">
-              {navLinks.map((link, i) => (
-                <motion.button
-                  key={link.href}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.06 }}
-                  onClick={() => handleNavClick(link.href)}
-                  className={`text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                    activeSection === link.href.slice(1)
-                      ? "text-white bg-[var(--primary)]/10"
-                      : "text-gray-400 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  {link.label}
-                </motion.button>
-              ))}
+              {navLinks.map((link, i) => {
+                const isAnchor = link.href.startsWith("#");
+                const isActive = isAnchor && activeSection === link.href.slice(1);
+                const className = `text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? "text-white bg-[var(--primary)]/10"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                }`;
+
+                if (!isAnchor) {
+                  return (
+                    <motion.div
+                      key={link.href}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.06 }}
+                    >
+                      <Link
+                        href={link.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={className}
+                      >
+                        {link.label}
+                      </Link>
+                    </motion.div>
+                  );
+                }
+
+                return (
+                  <motion.button
+                    key={link.href}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.06 }}
+                    onClick={() => handleNavClick(link.href)}
+                    className={className}
+                  >
+                    {link.label}
+                  </motion.button>
+                );
+              })}
               <button
                 onClick={() => handleNavClick("#contact")}
                 className="btn-primary mt-2 px-4 py-3 text-sm font-semibold rounded-lg text-center"

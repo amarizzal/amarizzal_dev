@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowDown, Mail, MapPin, Sparkles } from "lucide-react";
 import { GithubIcon, LinkedinIcon } from "@/components/ui/SocialIcons";
-import { personalInfo } from "@/lib/data";
+import type { Profile } from "@/lib/types";
 
 const roles = [
   "Fullstack Developer",
@@ -82,19 +82,36 @@ const Particle = ({ delay }: { delay: number }) => {
   );
 };
 
-const statItems = [
-  { value: "3+", label: "Tahun Pengalaman" },
-  { value: "20+", label: "Proyek Selesai" },
-  { value: "15+", label: "Klien Puas" },
-];
-
-export default function Hero() {
+export default function Hero({ profile }: { profile: Profile | null }) {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref });
   const y = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
   const particles = Array.from({ length: 16 }, (_, i) => i);
+  // Particle pakai Math.random() untuk posisinya — dirender hanya setelah
+  // mount supaya HTML server & client tidak pernah berbeda (hydration
+  // mismatch). Bug lama, ikut diperbaiki karena file ini sudah disentuh.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const nama = profile?.nama ?? "Rizal Ammar";
+  const lokasi = profile?.location ?? "Malang, Jawa Timur, Indonesia";
+  const bio =
+    profile?.bio ??
+    "Fullstack developer berbasis di Malang dengan pengalaman membangun web dan aplikasi modern.";
+
+  const statItems = [
+    { value: `${profile?.years_of_experience ?? 0}+`, label: "Tahun Pengalaman" },
+    { value: `${profile?.projects_completed ?? 0}+`, label: "Proyek Selesai" },
+    { value: `${profile?.clients_satisfied ?? 0}+`, label: "Klien Puas" },
+  ];
+
+  const socialLinks = [
+    { icon: GithubIcon, href: profile?.github_url, label: "GitHub" },
+    { icon: LinkedinIcon, href: profile?.linkedin_url, label: "LinkedIn" },
+    { icon: Mail, href: profile?.email ? `mailto:${profile.email}` : null, label: "Email" },
+  ].filter((s): s is typeof s & { href: string } => Boolean(s.href));
 
   return (
     <section
@@ -111,7 +128,7 @@ export default function Hero() {
       <FloatingOrb delay={1} size={300} x="60%" y="60%" color="rgba(6,182,212,0.08)" />
 
       {/* Particles */}
-      {particles.map((i) => (
+      {mounted && particles.map((i) => (
         <Particle key={i} delay={i * 0.5} />
       ))}
 
@@ -143,7 +160,7 @@ export default function Hero() {
               className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4"
             >
               Halo, Saya{" "}
-              <span className="gradient-text block mt-1">Rizal Ammar</span>
+              <span className="gradient-text block mt-1">{nama}</span>
             </motion.h1>
 
             {/* Typing Role */}
@@ -164,7 +181,7 @@ export default function Hero() {
               className="flex items-center gap-1.5 text-gray-500 text-sm mb-6"
             >
               <MapPin size={14} className="text-[#6366f1]" />
-              <span>Malang, Jawa Timur, Indonesia</span>
+              <span>{lokasi}</span>
             </motion.div>
 
             {/* Bio */}
@@ -174,7 +191,7 @@ export default function Hero() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-gray-400 text-base leading-relaxed mb-8 max-w-lg"
             >
-              {personalInfo.bio}
+              {bio}
             </motion.p>
 
             {/* CTA Buttons */}
@@ -204,34 +221,32 @@ export default function Hero() {
             </motion.div>
 
             {/* Social Links */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="flex items-center gap-4"
-            >
-              <span className="text-xs text-gray-600 uppercase tracking-wider">Temukan Saya</span>
-              <div className="flex gap-3">
-                {[
-                  { icon: GithubIcon, href: personalInfo.github, label: "GitHub" },
-                  { icon: LinkedinIcon, href: personalInfo.linkedin, label: "LinkedIn" },
-                  { icon: Mail, href: `mailto:${personalInfo.email}`, label: "Email" },
-                ].map(({ icon: Icon, href, label }) => (
-                  <motion.a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={label}
-                    className="w-9 h-9 rounded-lg glass border border-[var(--border)] flex items-center justify-center text-gray-400 hover:text-white hover:border-[var(--primary)]/50 transition-colors"
-                    whileHover={{ scale: 1.1, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Icon size={16} />
-                  </motion.a>
-                ))}
-              </div>
-            </motion.div>
+            {socialLinks.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="flex items-center gap-4"
+              >
+                <span className="text-xs text-gray-600 uppercase tracking-wider">Temukan Saya</span>
+                <div className="flex gap-3">
+                  {socialLinks.map(({ icon: Icon, href, label }) => (
+                    <motion.a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      className="w-9 h-9 rounded-lg glass border border-[var(--border)] flex items-center justify-center text-gray-400 hover:text-white hover:border-[var(--primary)]/50 transition-colors"
+                      whileHover={{ scale: 1.1, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Icon size={16} />
+                    </motion.a>
+                  ))}
+                </div>
+              </motion.div>
+            )}
           </div>
 
           {/* Right: Visual */}
@@ -256,7 +271,7 @@ export default function Hero() {
                 </div>
                 <div className="space-y-1 text-xs leading-6">
                   <p><span className="text-[#c084fc]">const</span> <span className="text-[#38bdf8]">developer</span> <span className="text-gray-400">= {"{"}</span></p>
-                  <p className="pl-4"><span className="text-[#86efac]">name</span><span className="text-gray-400">:</span> <span className="text-[#fbbf24]">&quot;Rizal Ammar&quot;</span><span className="text-gray-400">,</span></p>
+                  <p className="pl-4"><span className="text-[#86efac]">name</span><span className="text-gray-400">:</span> <span className="text-[#fbbf24]">&quot;{nama}&quot;</span><span className="text-gray-400">,</span></p>
                   <p className="pl-4"><span className="text-[#86efac]">role</span><span className="text-gray-400">:</span> <span className="text-[#fbbf24]">&quot;Fullstack Dev&quot;</span><span className="text-gray-400">,</span></p>
                   <p className="pl-4"><span className="text-[#86efac]">location</span><span className="text-gray-400">:</span> <span className="text-[#fbbf24]">&quot;Malang, ID&quot;</span><span className="text-gray-400">,</span></p>
                   <p className="pl-4"><span className="text-[#86efac]">stack</span><span className="text-gray-400">: [</span></p>

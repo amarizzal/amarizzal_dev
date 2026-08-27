@@ -12,13 +12,38 @@ services:
     expose:
       - "3000"
     environment:
+      # Wajib: container ini sekarang ada di DUA network (npm_network +
+      # db_shared); server.js standalone bind ke $HOSTNAME, dan HOSTNAME
+      # bawaan Docker (container id) cuma resolve di SATU network. Tanpa
+      # ini: "connection reset" saat diakses lewat salah satu network.
       - HOSTNAME=0.0.0.0
     env_file:
       - .env.production
-    mem_limit: 100m
+    # 100m -> 220m. Baseline Next 16 standalone + pool pg (max:3) + SSR
+    # halaman studi kasus/blog + editor admin ~150-180MB puncak. Menyamai
+    # ssb-nextjs yang sudah terbukti stabil di droplet yang sama. WAJIB
+    # dibarengi swap 1GB di droplet — lihat db/CATATAN-INFRA.md.
+    mem_limit: 220m
+    volumes:
+      # Gambar yang diunggah lewat /admin ditulis ke public/uploads di dalam
+      # container -- tanpa volume, hilang setiap kali image di-redeploy.
+      - uploads_data:/app/public/uploads
     networks:
       - npm_network
+      # Akses ke Postgres milik project ssb-poultry (host: ssb-db). Database
+      # ini menumpang instance Postgres ssb, BUKAN container sendiri --
+      # lihat db/CATATAN-INFRA.md untuk topologi & alasan lengkapnya.
+      - db_shared
 
 networks:
   npm_network:
     external: true
+  # Dibuat manual di droplet (`docker network create db_shared`) SEBELUM
+  # compose ini pertama kali di-up -- lihat db/CATATAN-INFRA.md. TIDAK
+  # dibuat otomatis di sini karena network ini dipakai bersama ssb-poultry
+  # dan siklus hidupnya tidak boleh terikat ke compose project mana pun.
+  db_shared:
+    external: true
+
+volumes:
+  uploads_data:

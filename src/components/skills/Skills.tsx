@@ -2,14 +2,7 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { skills, techStack } from "@/lib/data";
-
-const categories = [
-  { key: "frontend", label: "Frontend", color: "#6366f1" },
-  { key: "backend", label: "Backend", color: "#06b6d4" },
-  { key: "database", label: "Database", color: "#a855f7" },
-  { key: "tools", label: "Tools & DevOps", color: "#22c55e" },
-];
+import type { SkillGroup, TechStackItem } from "@/lib/types";
 
 function SkillBar({ name, level, color, delay }: { name: string; level: number; color: string; delay: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -34,7 +27,13 @@ function SkillBar({ name, level, color, delay }: { name: string; level: number; 
   );
 }
 
-export default function Skills() {
+export default function Skills({
+  groups,
+  techStack,
+}: {
+  groups: SkillGroup[];
+  techStack: TechStackItem[];
+}) {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-10%" });
 
@@ -64,65 +63,64 @@ export default function Skills() {
 
         {/* Skill bars grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-          {categories.map((cat, ci) => {
-            const catSkills = skills[cat.key as keyof typeof skills];
-            return (
-              <motion.div
-                key={cat.key}
-                initial={{ opacity: 0, y: 30 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.6, delay: ci * 0.1 }}
-                className="glass rounded-2xl p-5 border border-[var(--border)] glass-hover"
-              >
-                <div className="flex items-center gap-2 mb-5">
-                  <div
-                    className="w-2 h-2 rounded-full"
-                    style={{ background: cat.color, boxShadow: `0 0 6px ${cat.color}` }}
+          {groups.map((cat, ci) => (
+            <motion.div
+              key={cat.id}
+              initial={{ opacity: 0, y: 30 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, delay: ci * 0.1 }}
+              className="glass rounded-2xl p-5 border border-[var(--border)] glass-hover"
+            >
+              <div className="flex items-center gap-2 mb-5">
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: cat.color, boxShadow: `0 0 6px ${cat.color}` }}
+                />
+                <h3 className="text-sm font-semibold text-white uppercase tracking-wider">
+                  {cat.label}
+                </h3>
+              </div>
+              <div className="space-y-4">
+                {cat.items.map((skill, si) => (
+                  <SkillBar
+                    key={skill.id}
+                    name={skill.name}
+                    level={skill.level}
+                    color={cat.color}
+                    delay={ci * 5 + si}
                   />
-                  <h3 className="text-sm font-semibold text-white uppercase tracking-wider">
-                    {cat.label}
-                  </h3>
-                </div>
-                <div className="space-y-4">
-                  {catSkills.map((skill, si) => (
-                    <SkillBar
-                      key={skill.name}
-                      name={skill.name}
-                      level={skill.level}
-                      color={cat.color}
-                      delay={ci * 5 + si}
-                    />
-                  ))}
-                </div>
-              </motion.div>
-            );
-          })}
+                ))}
+              </div>
+            </motion.div>
+          ))}
         </div>
 
         {/* Tech Stack Ticker */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <p className="text-center text-xs text-gray-600 uppercase tracking-widest mb-5">
-            Teknologi yang pernah digunakan
-          </p>
-          <div className="flex flex-wrap gap-2 justify-center">
-            {techStack.map((tech, i) => (
-              <motion.span
-                key={tech}
-                className="skill-chip px-3 py-1.5 rounded-full text-xs font-medium text-gray-400 cursor-default"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={inView ? { opacity: 1, scale: 1 } : {}}
-                transition={{ delay: 0.5 + i * 0.03, duration: 0.3 }}
-                whileHover={{ scale: 1.06 }}
-              >
-                {tech}
-              </motion.span>
-            ))}
-          </div>
-        </motion.div>
+        {techStack.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <p className="text-center text-xs text-gray-600 uppercase tracking-widest mb-5">
+              Teknologi yang pernah digunakan
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {techStack.map((tech, i) => (
+                <motion.span
+                  key={tech.id}
+                  className="skill-chip px-3 py-1.5 rounded-full text-xs font-medium text-gray-400 cursor-default"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={inView ? { opacity: 1, scale: 1 } : {}}
+                  transition={{ delay: 0.5 + i * 0.03, duration: 0.3 }}
+                  whileHover={{ scale: 1.06 }}
+                >
+                  {tech.name}
+                </motion.span>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </div>
     </section>
   );

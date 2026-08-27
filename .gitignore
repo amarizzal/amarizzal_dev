@@ -33,6 +33,11 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# gambar unggahan admin — di produksi ini volume Docker (uploads_data),
+# bukan konten repo. .gitkeep dipertahankan supaya direktori tetap ada.
+/public/uploads/*
+!/public/uploads/.gitkeep
+
 # vercel
 .vercel
 
